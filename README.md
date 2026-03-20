@@ -60,6 +60,10 @@ Related scripts and investigation documents (file names only):
 - MI25_environment-setup-worklog.md
 - MI25_build-dependencies-map.md
 
+Related repository:
+
+- ROCm-MI25-build: https://github.com/AETS-MAGI/ROCm-MI25-build
+
 ## 8. Quick usage notes
 
 - Build Ollama with gfx900 target settings.

@@ -54,6 +54,10 @@
 - MI25_environment-setup-worklog.md
 - MI25_build-dependencies-map.md
 
+関連リポジトリ:
+
+- ROCm-MI25-build: https://github.com/AETS-MAGI/ROCm-MI25-build
+
 ## 8. クイック運用メモ
 
 - gfx900 ターゲット設定で Ollama をビルド
