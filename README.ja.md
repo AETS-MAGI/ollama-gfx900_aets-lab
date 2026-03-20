@@ -53,7 +53,6 @@
 - MI25_environment-setup.md
 - MI25_environment-setup-worklog.md
 - MI25_build-dependencies-map.md
-- AGENTS.md
 
 ## 8. クイック運用メモ
 
