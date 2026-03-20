@@ -71,4 +71,15 @@
 
 ---
 
-一般的なインストール手順、API 利用方法、コミュニティ情報などは英語版 [README.md](README.md) を参照してください。
+このフォークでは、upstream の一般向け導入手順を重複掲載しません。
+
+## Upstream project
+
+このリポジトリは upstream Ollama プロジェクトの研究/検証フォークです。
+
+標準的なインストール手順や一般利用方法は次を参照してください。
+
+- Upstream repository: `ollama/ollama`
+- upstream プロジェクトの公式インストール/ドキュメントページ
+
+本 README は、gfx900 / MI25 / ROCm の検証特化情報とローカル検証メモに集中します。
