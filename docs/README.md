@@ -1,11 +1,25 @@
 # Documentation
 
+[English](./README.md) | [日本語](./README.ja.md)
+
+> **This is a gfx900/MI25 optimization fork of Ollama.**
+> For upstream Ollama documentation, see [docs.ollama.com](https://docs.ollama.com).
+
+## Fork-specific Documentation
+
+* [gfx900 / MI25 Guide (EN)](./gfx900-mi25.md) — Build, runtime, and known limitations for gfx900
+* [gfx900 / MI25 ガイド (JA)](./gfx900-mi25.ja.md) — gfx900向けビルド・実行・既知制限（日本語）
+* [Hardware Support](./gpu.mdx) — GPU support table with gfx900 section
+* [Worklog](./worklog/README.md) — Chronological evidence trail
+
+## Upstream Reference
+
 ### Getting Started
 * [Quickstart](https://docs.ollama.com/quickstart)
 * [Examples](./examples.md)
 * [Importing models](https://docs.ollama.com/import)
-* [MacOS Documentation](https://docs.ollama.com/macos)
 * [Linux Documentation](https://docs.ollama.com/linux)
+* [MacOS Documentation](https://docs.ollama.com/macos)
 * [Windows Documentation](https://docs.ollama.com/windows)
 * [Docker Documentation](https://docs.ollama.com/docker)
 

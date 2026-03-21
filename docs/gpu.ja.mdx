@@ -1,0 +1,118 @@
+---
+title: ハードウェア対応
+---
+
+> **フォーク注記:** このドキュメントは gfx900/MI25 最適化フォーク版のハードウェア対応を記載します。
+> gfx900 向けのビルド・実行手順は [gfx900 / MI25 ガイド](./gfx900-mi25.ja.md) を参照してください。
+> [English version](./gpu.mdx)
+
+## Nvidia
+
+Ollama は compute capability 5.0 以上、ドライババージョン 531 以上の Nvidia GPU をサポートします。
+
+対応状況は [CUDA GPUs](https://developer.nvidia.com/cuda-gpus) で確認できます。
+
+| Compute Capability | ファミリー | カード例 |
+| --- | --- | --- |
+| 12.0 | GeForce RTX 50xx | `RTX 5090` `RTX 5080` `RTX 5070 Ti` `RTX 5070` `RTX 5060 Ti` `RTX 5060` |
+| 9.0 | NVIDIA | `H200` `H100` |
+| 8.9 | GeForce RTX 40xx | `RTX 4090` `RTX 4080` `RTX 4070 Ti` `RTX 4070` `RTX 4060 Ti` `RTX 4060` |
+| 8.6 | GeForce RTX 30xx | `RTX 3090 Ti` `RTX 3090` `RTX 3080 Ti` `RTX 3080` `RTX 3070 Ti` `RTX 3070` `RTX 3060 Ti` `RTX 3060` |
+| 8.0 | NVIDIA | `A100` `A30` |
+| 7.5 | GeForce GTX/RTX | `TITAN RTX` `RTX 2080 Ti` `RTX 2080` `RTX 2070` `RTX 2060` |
+| 7.0 | NVIDIA | `TITAN V` `V100` |
+| 6.1 | GeForce GTX | `GTX 1080 Ti` `GTX 1080` `GTX 1070 Ti` `GTX 1070` `GTX 1060` `GTX 1050 Ti` `GTX 1050` |
+| 5.0〜6.0 | 旧世代 | 詳細は [gpu.mdx](./gpu.mdx) 参照 |
+
+## AMD Radeon
+
+### gfx900 / MI25（このフォーク）
+
+このフォークは AMD Vega / gfx900 / Radeon Instinct MI25 向けの明示的なサポートを追加します。
+gfx900 は **upstream Ollama の AMD 対応表には含まれておらず**、フォーク固有のビルドが必要です。
+コードで確認済みのgfx900向け挙動制御は以下の通りです：
+
+| 挙動 | 値 | 根拠（コード） |
+|------|----|----|
+| Flash Attention | 無効（除外） | `ml/device.go:FlashAttentionSupported()` |
+| デフォルト `num_parallel` | 1（強制） | `server/sched.go` |
+| デフォルト `num_ctx` 上限 | 8192 | `server/routes.go` |
+| ビルド出力ディレクトリ | `build-gfx900/lib/ollama` | `ml/path.go`（優先探索） |
+
+詳細なビルド・実行手順は [gfx900 / MI25 ガイド](./gfx900-mi25.ja.md) を参照してください。
+
+### Linux 対応
+
+Ollama は Linux 上で AMD ROCm v7 ドライバが必要です。
+[AMD の ROCm ドキュメント](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/) の
+`amdgpu-install` ユーティリティを使用してインストールまたはアップグレードできます。
+
+| ファミリー | カード・アクセラレータ |
+| --- | --- |
+| AMD Radeon RX | `9070 XT` `9070` `7900 XTX` `7900 XT` `7800 XT` `7700 XT` `7600 XT` `7600` `6950 XT` `6900 XTX` `6900XT` `6800 XT` `6800` `5700 XT` `5700` `5600 XT` `5500 XT` |
+| AMD Radeon PRO | `W7900` `W7800` `W7700` `W7600` `W7500` `W6900X` `W6800X Duo` `W6800X` `W6800` `V620` |
+| AMD Ryzen AI | `Ryzen AI Max+ 395` `Ryzen AI Max 390` `Ryzen AI Max 385` `Ryzen AI 9 HX 375` `Ryzen AI 9 HX 370` `Ryzen AI 9 365` |
+| AMD Instinct | `MI350X` `MI300X` `MI300A` `MI250X` `MI250` `MI210` `MI100` |
+
+### Windows 対応
+
+ROCm v6.1 以降で、以下の GPU が Windows 上でサポートされます。
+
+| ファミリー | カード・アクセラレータ |
+| --- | --- |
+| AMD Radeon RX | `7900 XTX` `7900 XT` `7900 GRE` `7800 XT` `7700 XT` `7600 XT` `7600` `6950 XT` `6900 XTX` `6900XT` `6800 XT` `6800` |
+| AMD Radeon PRO | `W7900` `W7800` `W7700` `W7600` `W7500` `W6900X` `W6800X Duo` `W6800X` `W6800` `V620` |
+
+### Linux でのオーバーライド
+
+Ollama は AMD ROCm ライブラリを使用しますが、すべての AMD GPU がサポートされているわけではありません。
+一部のケースでは、近いアーキテクチャをターゲットとして強制することができます。
+
+例: Radeon RX 5400 は `gfx1034` ですが ROCm の直接サポートがありません。
+最も近い `gfx1030` をターゲットにするには：
+
+```bash
+export HSA_OVERRIDE_GFX_VERSION="10.3.0"
+```
+
+> **gfx900 注記:** このフォークでは `gfx900` をネイティブターゲットとしてビルドするため、
+> gfx900/MI25 に対しては `HSA_OVERRIDE_GFX_VERSION` の設定は**不要**です。
+
+既知の LLVM ターゲットと GPU の対応：
+
+| LLVM ターゲット | GPU 例 |
+|---|---|
+| gfx900 | Radeon Instinct MI25（**このフォーク対象**） |
+| gfx908 | Radeon Instinct MI100 |
+| gfx90a | Radeon Instinct MI210/MI250 |
+| gfx942 | Radeon Instinct MI300X/MI300A |
+| gfx1010 | Radeon RX 5700 XT |
+| gfx1030 | Radeon PRO V620 |
+| gfx1100 | Radeon PRO W7900 |
+| gfx1102 | Radeon RX 7600 |
+| gfx1200 | Radeon RX 9070 |
+| gfx1201 | Radeon RX 9070 XT |
+
+### GPU の選択
+
+複数の AMD GPU があり、Ollama が使用する GPU を絞りたい場合は `ROCR_VISIBLE_DEVICES` を設定します。
+
+```bash
+export ROCR_VISIBLE_DEVICES=<GPU-UUID>
+```
+
+デバイス一覧は `rocminfo` で確認できます。
+
+## Metal（Apple GPU）
+
+Ollama は Metal API を介して Apple デバイスの GPU アクセラレーションをサポートします。
+
+## Vulkan GPU サポート
+
+> **注記:** Vulkan は現在実験的な機能です。有効にするには `OLLAMA_VULKAN=1` を設定してください。
+
+Windows および Linux 上で [Vulkan](https://www.vulkan.org/) による追加 GPU サポートが利用可能です。
+
+```bash
+sudo setcap cap_perfmon+ep /usr/local/bin/ollama
+```

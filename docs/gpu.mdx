@@ -2,6 +2,10 @@
 title: Hardware support
 ---
 
+> **Fork note:** This document covers hardware support for the gfx900/MI25 optimization fork.
+> See [gfx900 / MI25 Guide](./gfx900-mi25.md) for build and runtime details specific to gfx900.
+> [日本語版はこちら](./gpu.ja.mdx)
+
 ## Nvidia
 Ollama supports Nvidia GPUs with compute capability 5.0+ and driver version 531 and newer.
 
@@ -58,6 +62,21 @@ Ollama supports the following AMD GPUs via the ROCm library:
 > **NOTE:**
 > Additional AMD GPU support is provided by the Vulkan Library - see below.
 
+
+### gfx900 / MI25 (This Fork)
+
+This fork adds explicit support for AMD Vega / gfx900 / Radeon Instinct MI25.
+gfx900 is **not included in the upstream Ollama AMD support table** and requires
+a fork-specific build. The following behaviors are enforced in code for gfx900:
+
+| Behavior | Value | Source |
+|----------|-------|--------|
+| Flash Attention | Disabled | `ml/device.go:FlashAttentionSupported()` |
+| Default `num_parallel` | 1 (forced) | `server/sched.go` |
+| Default `num_ctx` cap | 8192 | `server/routes.go` |
+| Build output directory | `build-gfx900/lib/ollama` | `ml/path.go` (priority search) |
+
+See [gfx900 / MI25 Guide](./gfx900-mi25.md) for full build and runtime instructions.
 
 ### Linux Support
 
