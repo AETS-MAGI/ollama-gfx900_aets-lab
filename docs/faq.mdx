@@ -19,13 +19,17 @@ gfx900 is **not supported by upstream Ollama** (blocked in commit `55ca82726`). 
 
 See [gfx900 / MI25 Guide](./gfx900-mi25.md) for build and setup instructions.
 
-## Why is Flash Attention disabled on my gfx900 / MI25?
+## Why is Flash Attention not available on my gfx900 / MI25?
 
-Flash Attention is intentionally disabled for gfx900 in this fork (`ml/device.go:FlashAttentionSupported()`). Setting `OLLAMA_FLASH_ATTENTION=1` has no effect on gfx900. This is a stability measure — gfx900's MLIR iGEMM support was disabled upstream in 2021, and Flash Attention depends on code paths that are not reliable on this architecture.
+`FlashAttentionSupported()` in `ml/device.go` returns `false` when a gfx900 device is present, so Flash Attention is not used regardless of the `OLLAMA_FLASH_ATTENTION` setting. The server log will show `FlashAttention:Auto` (the initial parameter type) — this is expected; it means the user has not overridden it, but since `FlashAttentionSupported()` returned false, it is not activated.
 
-## Why is my context window limited to 8192 tokens on gfx900?
+Background: gfx900's MLIR iGEMM support was disabled upstream in 2021, and the code paths that Flash Attention depends on are not reliable on this architecture.
 
-This fork caps the default `num_ctx` at 8192 for gfx900 (`server/routes.go`) to prevent VRAM exhaustion on MI25 (16 GB HBM2). You can override it with `OLLAMA_CONTEXT_LENGTH`, but stability above 8192 tokens is not guaranteed on this hardware.
+## Why does `num_ctx` seem limited on gfx900?
+
+The server calculates a VRAM-based default `num_ctx` at startup. If that default exceeds 8192 and a gfx900 device is present, it is capped to 8192 (`server/routes.go`). On MI25 (16 GB HBM2), the VRAM-based default is typically 4096, so the cap does not apply — the default context is 4096, not 8192.
+
+You can override it with `OLLAMA_CONTEXT_LENGTH`, but stability above 8192 tokens is not guaranteed on MI25.
 
 ## My gfx900 model runs on CPU. What do I do?
 

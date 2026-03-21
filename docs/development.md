@@ -149,9 +149,11 @@ cmake -B build-gfx900 \
 cmake --build build-gfx900 --parallel $(nproc)
 ```
 
-If rocBLAS initialization fails at runtime (crash or CPU fallback), build a local rocBLAS/Tensile for gfx900:
+If rocBLAS initialization fails at runtime (crash or CPU fallback), build a local rocBLAS/Tensile for gfx900
+using the script in the related [ROCm-MI25-build](https://github.com/AETS-MAGI/ROCm-MI25-build) repository:
 
 ```shell
+# From ROCm-MI25-build repository root
 ./build-rocblas-gfx900.sh
 export ROCBLAS_TENSILE_LIBPATH=/path/to/local/rocblas/library
 ```

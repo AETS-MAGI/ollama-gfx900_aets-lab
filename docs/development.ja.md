@@ -146,9 +146,11 @@ cmake -B build-gfx900 \
 cmake --build build-gfx900 --parallel $(nproc)
 ```
 
-実行時に rocBLAS の初期化に失敗する場合（クラッシュや CPU フォールバック）は、gfx900 向け rocBLAS/Tensile をローカルビルドします：
+実行時に rocBLAS の初期化に失敗する場合（クラッシュや CPU フォールバック）は、関連リポジトリ
+[ROCm-MI25-build](https://github.com/AETS-MAGI/ROCm-MI25-build) のスクリプトで gfx900 向け rocBLAS/Tensile をローカルビルドします：
 
 ```shell
+# ROCm-MI25-build リポジトリのルートから実行
 ./build-rocblas-gfx900.sh
 export ROCBLAS_TENSILE_LIBPATH=/path/to/local/rocblas/library
 ```

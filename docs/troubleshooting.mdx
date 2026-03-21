@@ -179,7 +179,8 @@ ls build-gfx900/lib/ollama/libggml-hip.so
 
 If missing, rebuild: see [gfx900 / MI25 Guide — Building](./gfx900-mi25.md#3-building).
 
-**Step 4:** If rocBLAS crashes on startup, inject a local gfx900 rocBLAS:
+**Step 4:** If rocBLAS crashes on startup, inject a local gfx900 rocBLAS built from the
+[ROCm-MI25-build](https://github.com/AETS-MAGI/ROCm-MI25-build) repository:
 
 ```shell
 export ROCBLAS_TENSILE_LIBPATH=/path/to/local/rocblas/library
@@ -194,10 +195,10 @@ Symptom: Ollama starts, detects gfx900, then crashes or falls back to CPU with a
 
 Cause: The system ROCm package may not include gfx900-specific Tensile kernels.
 
-Resolution:
+Resolution — use the script from [ROCm-MI25-build](https://github.com/AETS-MAGI/ROCm-MI25-build):
 
 ```shell
-# Build local rocBLAS for gfx900
+# From ROCm-MI25-build repository root
 ./build-rocblas-gfx900.sh
 
 # Inject at runtime
@@ -222,9 +223,11 @@ ollama serve
 
 ---
 
-### Context length exceeds 8192 tokens on gfx900
+### Context length and gfx900
 
-This is intentional. This fork caps the default `num_ctx` at 8192 for gfx900 (`server/routes.go`) to prevent VRAM exhaustion. You can override it manually, but stability is not guaranteed above 8192 on MI25:
+`server/routes.go` caps the VRAM-based default `num_ctx` to 8192 when a gfx900 is present — but only if the VRAM estimate would produce a default above 8192. On MI25 (16 GB HBM2), the VRAM-based default is typically **4096**, so the cap does not apply.
+
+If you see context-related instability, explicitly limiting context is safe:
 
 ```shell
 OLLAMA_CONTEXT_LENGTH=4096 ollama serve
@@ -234,7 +237,7 @@ OLLAMA_CONTEXT_LENGTH=4096 ollama serve
 
 ### Flash Attention unavailable on gfx900
 
-Flash Attention is disabled for gfx900 in this fork (`ml/device.go:FlashAttentionSupported()`). Setting `OLLAMA_FLASH_ATTENTION=1` has no effect. This is by design for stability.
+`FlashAttentionSupported()` in `ml/device.go` returns `false` for gfx900, so Flash Attention is not used regardless of `OLLAMA_FLASH_ATTENTION`. The log entry `FlashAttention:Auto` is the parameter type's initial value — not an indication that Flash Attention is active.
 
 ---
 

@@ -89,7 +89,7 @@ ls build-gfx900/lib/ollama/libggml-hip.so
 
 ファイルがない場合は再ビルドしてください：[gfx900 / MI25 ガイド — ビルド](./gfx900-mi25.ja.md#3-ビルド) 参照。
 
-**ステップ 4:** rocBLAS がクラッシュする場合は、ローカルビルドの rocBLAS を注入：
+**ステップ 4:** rocBLAS がクラッシュする場合は、[ROCm-MI25-build](https://github.com/AETS-MAGI/ROCm-MI25-build) でビルドした gfx900 向け rocBLAS を注入：
 
 ```shell
 export ROCBLAS_TENSILE_LIBPATH=/path/to/local/rocblas/library
@@ -104,10 +104,10 @@ ollama serve
 
 **原因:** システムの ROCm パッケージに gfx900 向け Tensile カーネルが含まれていない場合があります。
 
-**対処:**
+**対処** — [ROCm-MI25-build](https://github.com/AETS-MAGI/ROCm-MI25-build) のスクリプトを使用：
 
 ```shell
-# gfx900 向け rocBLAS をローカルビルド
+# ROCm-MI25-build リポジトリのルートから実行
 ./build-rocblas-gfx900.sh
 
 # 実行時に注入
@@ -132,11 +132,11 @@ ollama serve
 
 ---
 
-### gfx900 でコンテキスト長が 8192 トークンを超えられない
+### gfx900 でのコンテキスト長について
 
-これは意図的な制限です。このフォークは MI25 での VRAM 枯渇を防ぐため、gfx900 のデフォルト `num_ctx` を 8192 にキャップしています（`server/routes.go`）。
+`server/routes.go` は gfx900 が存在する場合、VRAM 基準のデフォルト `num_ctx` を 8192 にキャップします — ただし VRAM 見積もりが 8192 超になる場合のみです。MI25（16 GB HBM2）では VRAM 基準のデフォルトは通常 **4096** であり、キャップは適用されません。
 
-手動で上書きはできますが、MI25 で 8192 超の安定性は保証されません：
+コンテキスト関連の不安定さが生じる場合は、明示的に制限するのが安全です：
 
 ```shell
 OLLAMA_CONTEXT_LENGTH=4096 ollama serve
@@ -146,7 +146,7 @@ OLLAMA_CONTEXT_LENGTH=4096 ollama serve
 
 ### Flash Attention が gfx900 で使用できない
 
-Flash Attention はこのフォークで gfx900 向けに無効化されています（`ml/device.go:FlashAttentionSupported()`）。`OLLAMA_FLASH_ATTENTION=1` を設定しても効果はありません。安定性のための意図的な設計です。
+`ml/device.go` の `FlashAttentionSupported()` は gfx900 で `false` を返すため、`OLLAMA_FLASH_ATTENTION` の設定にかかわらず Flash Attention は使用されません。ログの `FlashAttention:Auto` はパラメータ型の初期値であり、Flash Attention が有効であることを示すものではありません。
 
 ---
 

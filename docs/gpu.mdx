@@ -71,9 +71,9 @@ a fork-specific build. The following behaviors are enforced in code for gfx900:
 
 | Behavior | Value | Source |
 |----------|-------|--------|
-| Flash Attention | Disabled | `ml/device.go:FlashAttentionSupported()` |
+| Flash Attention | Not used — `FlashAttentionSupported()` returns `false`; `OLLAMA_FLASH_ATTENTION` has no effect | `ml/device.go` |
 | Default `num_parallel` | 1 (forced) | `server/sched.go` |
-| Default `num_ctx` cap | 8192 | `server/routes.go` |
+| `num_ctx` ceiling | 8192 — only applies if VRAM-based default exceeds 8192; on MI25 (16 GB) typical default is 4096 | `server/routes.go` |
 | Build output directory | `build-gfx900/lib/ollama` | `ml/path.go` (priority search) |
 
 See [gfx900 / MI25 Guide](./gfx900-mi25.md) for full build and runtime instructions.
