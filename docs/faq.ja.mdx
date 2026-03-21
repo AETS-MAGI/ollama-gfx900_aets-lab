@@ -1,0 +1,186 @@
+---
+title: FAQ
+---
+
+[English](./faq.mdx) | [日本語](./faq.ja.mdx)
+
+> **フォーク注記:** このFAQには upstream の内容に加え、gfx900/MI25 固有の項目が含まれています。
+
+## gfx900 / MI25（Radeon Instinct）はサポートされていますか？
+
+gfx900 は **upstream Ollama ではサポートされていません**（コミット `55ca82726` でブロック）。このフォークはそのブロックを解除し、gfx900 向けの安定化パッチを追加しています。
+
+**このフォークで確認済み:**
+- `rocminfo` レベルで MI25/gfx900 が認識される
+- local rocBLAS パス注入後、tinyllama および deepseek-r1:14b での GPU 推論を確認
+- 修正後、即時 CPU フォールバックから GPU discovery へ前進
+
+**未確認事項:** 幅広いモデルとの互換性、マルチセッション安定性、他マシンへの移植性。
+
+セットアップ手順は [gfx900 / MI25 ガイド](./gfx900-mi25.ja.md) を参照してください。
+
+## gfx900 / MI25 で Flash Attention が使えないのはなぜですか？
+
+Flash Attention はこのフォークで gfx900 向けに意図的に無効化されています（`ml/device.go:FlashAttentionSupported()`）。`OLLAMA_FLASH_ATTENTION=1` を設定しても gfx900 では効果がありません。これは安定性のための設計です — gfx900 の MLIR iGEMM サポートは 2021 年に upstream で無効化されており、Flash Attention が依存するコードパスがこのアーキテクチャでは信頼できません。
+
+## gfx900 でコンテキストウィンドウが 8192 トークンに制限されているのはなぜですか？
+
+このフォークは MI25（16 GB HBM2）での VRAM 枯渇を防ぐため、gfx900 のデフォルト `num_ctx` を 8192 にキャップしています（`server/routes.go`）。`OLLAMA_CONTEXT_LENGTH` で上書きできますが、このハードウェアで 8192 超の安定性は保証されません。
+
+## gfx900 のモデルが CPU で動作します。どうすればいいですか？
+
+最も多い原因は gfx900 向け rocBLAS ライブラリの不在です。[トラブルシューティング — gfx900 セクション](./troubleshooting.ja.mdx#gfx900--mi25-トラブルシューティング) を参照してください。
+
+簡易チェックリスト：
+1. `rocminfo | grep gfx` — デバイスが認識されていること
+2. `ls build-gfx900/lib/ollama/libggml-hip.so` — ビルド成果物が存在すること
+3. rocBLAS がクラッシュする場合：`./build-rocblas-gfx900.sh` でローカルビルド
+
+---
+
+## Ollama をアップグレードするには？
+
+macOS と Windows では自動更新されます。タスクバー/メニューバーから「再起動して更新」をクリックしてください。
+
+Linux では再インストールスクリプトを実行します：
+
+```shell
+curl -fsSL https://ollama.com/install.sh | sh
+```
+
+## ログを確認するには？
+
+[トラブルシューティング](./troubleshooting.ja.mdx) を参照してください。
+
+## GPU の互換性を確認するには？
+
+[ハードウェア対応表](./gpu.ja.mdx) を参照してください。
+
+## コンテキストウィンドウサイズを指定するには？
+
+デフォルトは 4096 トークンです。環境変数で変更できます：
+
+```shell
+OLLAMA_CONTEXT_LENGTH=8192 ollama serve
+```
+
+`ollama run` 使用時：
+
+```shell
+/set parameter num_ctx 4096
+```
+
+API 使用時：
+
+```shell
+curl http://localhost:11434/api/generate -d '{
+  "model": "llama3.2",
+  "prompt": "Why is the sky blue?",
+  "options": {
+    "num_ctx": 4096
+  }
+}'
+```
+
+> **gfx900 注意:** このフォークは gfx900 でのデフォルト `num_ctx` を 8192 にキャップしています。詳細は上記 FAQ を参照してください。
+
+## モデルが GPU に読み込まれたか確認するには？
+
+```shell
+ollama ps
+```
+
+`Processor` 列で確認できます：
+- `100% GPU` — GPU のみで動作
+- `100% CPU` — システムメモリのみで動作
+- `48%/52% CPU/GPU` — 両方に分散
+
+## Ollama サーバーを設定するには？
+
+### Linux (systemd)
+
+```shell
+sudo systemctl edit ollama
+```
+
+または `/etc/systemd/system/ollama.service.d/override.conf` を手動作成：
+
+```ini
+[Service]
+Environment="OLLAMA_DEBUG=1"
+```
+
+### Mac
+
+```bash
+launchctl setenv OLLAMA_HOST "0.0.0.0:11434"
+```
+
+その後 Ollama を再起動してください。
+
+## モデルはどこに保存されますか？
+
+- macOS: `~/.ollama/models`
+- Linux: `/usr/share/ollama/.ollama/models`
+- Windows: `C:\Users\%username%\.ollama\models`
+
+別の場所を使用する場合は `OLLAMA_MODELS` 環境変数を設定してください。
+
+## Flash Attention を有効にするには？
+
+```shell
+OLLAMA_FLASH_ATTENTION=1 ollama serve
+```
+
+> **gfx900 注意:** Flash Attention は gfx900 では無効です。この設定は効果がありません。
+
+## K/V キャッシュの量子化タイプを設定するには？
+
+Flash Attention が有効な場合、K/V キャッシュを量子化してメモリ使用量を削減できます：
+
+```shell
+OLLAMA_KV_CACHE_TYPE=q8_0 ollama serve
+```
+
+利用可能なタイプ：
+- `f16` — 高精度・高メモリ（デフォルト）
+- `q8_0` — 約 1/2 のメモリ、精度ほぼ同等（推奨）
+- `q4_0` — 約 1/4 のメモリ、精度やや低下
+
+## 同時リクエスト数を管理するには？
+
+- `OLLAMA_MAX_LOADED_MODELS` — 同時に読み込めるモデルの最大数（デフォルト: GPU 数 × 3）
+- `OLLAMA_NUM_PARALLEL` — 各モデルが同時に処理するリクエストの最大数（デフォルト: 1）
+- `OLLAMA_MAX_QUEUE` — キューの最大リクエスト数（デフォルト: 512）
+
+> **gfx900 注意:** このフォークは gfx900 の `num_parallel` を強制的に 1 に設定します（`server/sched.go`）。
+
+## モデルをメモリに保持し続けるには？
+
+デフォルトでは 5 分後にアンロードされます。`keep_alive` パラメータで制御できます：
+
+```shell
+# 無期限に保持
+curl http://localhost:11434/api/generate -d '{"model": "llama3.2", "keep_alive": -1}'
+
+# 即時アンロード
+curl http://localhost:11434/api/generate -d '{"model": "llama3.2", "keep_alive": 0}'
+```
+
+または `OLLAMA_KEEP_ALIVE` 環境変数でサーバー全体の設定を変更できます。
+
+## Ollama のクラウド機能を無効にするには？
+
+`~/.ollama/server.json` に設定します：
+
+```json
+{
+  "disable_ollama_cloud": true
+}
+```
+
+または環境変数：
+
+```shell
+OLLAMA_NO_CLOUD=1
+```

@@ -1,0 +1,229 @@
+---
+title: トラブルシューティング
+description: Ollama で問題が発生した場合の対処方法
+---
+
+[English](./troubleshooting.mdx) | [日本語](./troubleshooting.ja.mdx)
+
+> **フォーク注記:** このドキュメントには upstream のトラブルシューティングに加え、gfx900/MI25 固有のセクションが含まれています。
+> ビルド・実行の詳細は [gfx900 / MI25 ガイド](./gfx900-mi25.ja.md) を参照してください。
+
+---
+
+## ログの確認
+
+**Mac:**
+
+```shell
+cat ~/.ollama/logs/server.log
+```
+
+**Linux (systemd):**
+
+```shell
+journalctl -u ollama --no-pager --follow --pager-end
+```
+
+**コンテナ内:**
+
+```shell
+docker logs <container-name>
+```
+
+**Windows:**
+- `explorer %LOCALAPPDATA%\Ollama` — サーバーログ（`server.log`）
+- `explorer %LOCALAPPDATA%\Programs\Ollama` — バイナリ
+
+**ターミナルで直接起動した場合:** そのターミナルにログが出力されます。
+
+---
+
+## LLM ライブラリ
+
+Ollama は GPU の種類や CPU の機能に応じて複数の LLM ライブラリを同梱しています。自動検出が失敗する場合は、ライブラリを明示的に指定できます：
+
+```shell
+OLLAMA_LLM_LIBRARY="cpu_avx2" ollama serve
+```
+
+サーバーログで検出されたライブラリ一覧を確認できます：
+
+```
+Dynamic LLM libraries [rocm_v6 cpu cpu_avx cpu_avx2]
+```
+
+---
+
+## gfx900 / MI25 トラブルシューティング
+
+> **このフォーク専用です。** AMD Vega / gfx900 / Radeon Instinct MI25 固有の問題を扱います。
+
+### モデルが GPU ではなく CPU で動作する
+
+最も多い原因は、gfx900 向け rocBLAS/Tensile ライブラリの不在または配置ミスです。
+
+**ステップ 1:** デバイスが認識されているか確認：
+
+```shell
+rocminfo | grep -E "Name|gfx"
+# 期待値: Name: gfx900
+```
+
+**ステップ 2:** デバッグログでデバイス選択を確認：
+
+```shell
+OLLAMA_DEBUG=1 ollama serve 2>&1 | grep -E "gfx|rocm|library|fallback"
+```
+
+以下のようなログが出ていれば GPU で動作しています：
+```
+level=INFO  msg="inference compute" id=... library=rocm compute=gfx900 ...
+```
+`library=cpu` と表示される場合は GPU バックエンドが読み込まれていません。
+
+**ステップ 3:** gfx900 ビルド成果物の確認：
+
+```shell
+ls build-gfx900/lib/ollama/libggml-hip.so
+```
+
+ファイルがない場合は再ビルドしてください：[gfx900 / MI25 ガイド — ビルド](./gfx900-mi25.ja.md#3-ビルド) 参照。
+
+**ステップ 4:** rocBLAS がクラッシュする場合は、ローカルビルドの rocBLAS を注入：
+
+```shell
+export ROCBLAS_TENSILE_LIBPATH=/path/to/local/rocblas/library
+ollama serve
+```
+
+---
+
+### rocBLAS クラッシュ / 初期化失敗
+
+**症状:** gfx900 が検出された後、rocBLAS エラーでクラッシュまたは CPU フォールバックする。
+
+**原因:** システムの ROCm パッケージに gfx900 向け Tensile カーネルが含まれていない場合があります。
+
+**対処:**
+
+```shell
+# gfx900 向け rocBLAS をローカルビルド
+./build-rocblas-gfx900.sh
+
+# 実行時に注入
+export ROCBLAS_TENSILE_LIBPATH=/path/to/local/rocblas/library
+ollama serve
+```
+
+---
+
+### SDMA / メモリ転送エラー（gfx900）
+
+**症状:** GPU が使用されているが、推論の出力が文字化けする、または途中でクラッシュする。
+
+**背景:** gfx900 には既知の SDMA（System DMA）バグがあります。upstream Ollama のコミット `da3bf2335` で回避済みであり、このフォークもその修正を継承しています。
+
+それでもエラーが発生する場合は：
+
+```shell
+export GPU_MAX_HW_QUEUES=1
+ollama serve
+```
+
+---
+
+### gfx900 でコンテキスト長が 8192 トークンを超えられない
+
+これは意図的な制限です。このフォークは MI25 での VRAM 枯渇を防ぐため、gfx900 のデフォルト `num_ctx` を 8192 にキャップしています（`server/routes.go`）。
+
+手動で上書きはできますが、MI25 で 8192 超の安定性は保証されません：
+
+```shell
+OLLAMA_CONTEXT_LENGTH=4096 ollama serve
+```
+
+---
+
+### Flash Attention が gfx900 で使用できない
+
+Flash Attention はこのフォークで gfx900 向けに無効化されています（`ml/device.go:FlashAttentionSupported()`）。`OLLAMA_FLASH_ATTENTION=1` を設定しても効果はありません。安定性のための意図的な設計です。
+
+---
+
+### GPU 実行の確認方法
+
+推論中に `ollama ps` で GPU 使用状況を確認できます：
+
+```shell
+ollama ps
+# NAME     ID    SIZE   PROCESSOR   UNTIL
+# model    ...   ...    100% GPU    ...
+```
+
+`100% GPU` であれば MI25 で動作しています。`100% CPU` の場合は GPU バックエンドが読み込まれていません — [モデルが CPU で動作する](#モデルが-gpu-ではなく-cpu-で動作する) を参照してください。
+
+---
+
+## NVIDIA GPU 検出の問題
+
+GPU 検出時の問題は、最新のドライバを使用することで多くのケースが解決されます。
+
+### Linux NVIDIA
+
+```shell
+# UVM ドライバの再ロード
+sudo rmmod nvidia_uvm && sudo modprobe nvidia_uvm
+```
+
+追加の診断情報：
+
+```shell
+CUDA_ERROR_LEVEL=50 ollama serve
+sudo dmesg | grep -i nvrm
+sudo dmesg | grep -i nvidia
+```
+
+---
+
+## AMD GPU 検出の問題
+
+Linux での AMD GPU アクセスには `video` および/または `render` グループへの所属が必要です。
+
+```shell
+AMD_LOG_LEVEL=3 ollama serve  # AMD HIP/ROCm の詳細ログ
+OLLAMA_DEBUG=1 ollama serve   # GPU 検出の詳細情報
+sudo dmesg | grep -i amdgpu
+sudo dmesg | grep -i kfd
+```
+
+### AMD ドライババージョン不一致
+
+GPU が検出されず、以下のようなログが出る場合：
+
+```
+msg="failure during GPU discovery" ... error="failed to finish discovery before timeout"
+```
+
+システムの AMD GPU ドライバが古い可能性があります。Ollama は ROCm 7 ライブラリを同梱しており、対応する ROCm 7 カーネルドライバが必要です。
+
+[AMD の ROCm ドキュメント](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/) の `amdgpu-install` を使用して ROCm v7 ドライバにアップグレードし、再起動してください。
+
+---
+
+## 旧バージョンのインストール（Linux）
+
+問題が発生した場合や特定バージョンを試したい場合：
+
+```shell
+curl -fsSL https://ollama.com/install.sh | OLLAMA_VERSION=0.5.7 sh
+```
+
+---
+
+## Linux tmp noexec
+
+Ollama の一時ファイルディレクトリに "noexec" フラグが設定されている場合、`OLLAMA_TMPDIR` で別の場所を指定できます：
+
+```shell
+export OLLAMA_TMPDIR=/usr/share/ollama/
+```

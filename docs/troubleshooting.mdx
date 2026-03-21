@@ -3,6 +3,11 @@ title: Troubleshooting
 description: How to troubleshoot issues encountered with Ollama
 ---
 
+[English](./troubleshooting.mdx) | [日本語](./troubleshooting.ja.mdx)
+
+> **Fork note:** This document includes gfx900/MI25-specific troubleshooting sections in addition to upstream content.
+> See [gfx900 / MI25 Guide](./gfx900-mi25.md) for build and runtime details.
+
 Sometimes Ollama may not perform as expected. One of the best ways to figure out what happened is to take a look at the logs. Find the logs on **Mac** by running the command:
 
 ```shell
@@ -138,6 +143,114 @@ After upgrading, reboot and restart Ollama.
 If you experience gibberish responses when models load across multiple AMD GPUs on Linux, see the following guide.
 
 - https://rocm.docs.amd.com/projects/radeon/en/latest/docs/install/native_linux/mgpu.html#mgpu-known-issues-and-limitations
+
+## gfx900 / MI25 Troubleshooting
+
+> **This fork only.** These issues are specific to AMD Vega / gfx900 / Radeon Instinct MI25.
+
+### Model runs on CPU instead of GPU
+
+The most common cause is a missing or misplaced rocBLAS/Tensile library for gfx900.
+
+**Step 1:** Confirm the device is detected:
+
+```shell
+rocminfo | grep -E "Name|gfx"
+# Expected: Name: gfx900
+```
+
+**Step 2:** Start with debug logging and check device selection:
+
+```shell
+OLLAMA_DEBUG=1 ollama serve 2>&1 | grep -E "gfx|rocm|library|fallback"
+```
+
+Look for lines like:
+```
+level=INFO  msg="inference compute" id=... library=rocm compute=gfx900 ...
+```
+If you see `library=cpu` instead, the GPU backend was not loaded.
+
+**Step 3:** Verify the gfx900 build artifacts are in place:
+
+```shell
+ls build-gfx900/lib/ollama/libggml-hip.so
+```
+
+If missing, rebuild: see [gfx900 / MI25 Guide — Building](./gfx900-mi25.md#3-building).
+
+**Step 4:** If rocBLAS crashes on startup, inject a local gfx900 rocBLAS:
+
+```shell
+export ROCBLAS_TENSILE_LIBPATH=/path/to/local/rocblas/library
+ollama serve
+```
+
+---
+
+### rocBLAS crash / initialization failure
+
+Symptom: Ollama starts, detects gfx900, then crashes or falls back to CPU with a rocBLAS error.
+
+Cause: The system ROCm package may not include gfx900-specific Tensile kernels.
+
+Resolution:
+
+```shell
+# Build local rocBLAS for gfx900
+./build-rocblas-gfx900.sh
+
+# Inject at runtime
+export ROCBLAS_TENSILE_LIBPATH=/path/to/local/rocblas/library
+ollama serve
+```
+
+---
+
+### SDMA / memory transfer errors (gfx900)
+
+Symptom: GPU is detected and used, but inference produces garbage output or crashes mid-generation.
+
+Background: gfx900 has known SDMA (System DMA) bugs that upstream Ollama worked around in commit `da3bf2335`. This fork preserves that workaround.
+
+If you still encounter SDMA-related errors, try:
+
+```shell
+export GPU_MAX_HW_QUEUES=1
+ollama serve
+```
+
+---
+
+### Context length exceeds 8192 tokens on gfx900
+
+This is intentional. This fork caps the default `num_ctx` at 8192 for gfx900 (`server/routes.go`) to prevent VRAM exhaustion. You can override it manually, but stability is not guaranteed above 8192 on MI25:
+
+```shell
+OLLAMA_CONTEXT_LENGTH=4096 ollama serve
+```
+
+---
+
+### Flash Attention unavailable on gfx900
+
+Flash Attention is disabled for gfx900 in this fork (`ml/device.go:FlashAttentionSupported()`). Setting `OLLAMA_FLASH_ATTENTION=1` has no effect. This is by design for stability.
+
+---
+
+### Verifying GPU execution
+
+Use `ollama ps` during inference to confirm GPU usage:
+
+```shell
+ollama ps
+# NAME     ID    SIZE   PROCESSOR   UNTIL
+# model    ...   ...    100% GPU    ...
+```
+
+`100% GPU` confirms the model is running on the MI25. `100% CPU` means the GPU backend was not loaded — see [Model runs on CPU](#model-runs-on-cpu-instead-of-gpu) above.
+
+---
 
 ## Windows Terminal Errors
 

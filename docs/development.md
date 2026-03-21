@@ -1,5 +1,10 @@
 # Development
 
+[English](./development.md) | [日本語](./development.ja.md)
+
+> **Fork note:** This document covers development setup for the gfx900/MI25 investigation fork.
+> See [gfx900 / MI25 Guide](./gfx900-mi25.md) for runtime and validation details.
+
 Install prerequisites:
 
 - [Go](https://go.dev/doc/install)
@@ -125,6 +130,40 @@ Lastly, run Ollama:
 go run . serve
 ```
 
+### Linux AMD ROCm (gfx900 / MI25)
+
+> **This fork only.** Upstream Ollama does not build for gfx900.
+
+Requires ROCm 6.1+ with HIP compiler. Verify device recognition first:
+
+```shell
+rocminfo | grep -E "Name|gfx"
+```
+
+Build with explicit gfx900 target. Output goes to `build-gfx900/` (automatically prioritized by `ml/path.go`):
+
+```shell
+cmake -B build-gfx900 \
+    -DAMDGPU_TARGETS=gfx900 \
+    -DCMAKE_BUILD_TYPE=Release
+cmake --build build-gfx900 --parallel $(nproc)
+```
+
+If rocBLAS initialization fails at runtime (crash or CPU fallback), build a local rocBLAS/Tensile for gfx900:
+
+```shell
+./build-rocblas-gfx900.sh
+export ROCBLAS_TENSILE_LIBPATH=/path/to/local/rocblas/library
+```
+
+Then run Ollama with the gfx900 build:
+
+```shell
+go run . serve
+```
+
+See [gfx900 / MI25 Guide](./gfx900-mi25.md) for full details on runtime behavior and known limitations.
+
 ## MLX Engine (Optional)
 
 The MLX engine enables running safetensor based models. It requires building the [MLX](https://github.com/ml-explore/mlx) and [MLX-C](https://github.com/ml-explore/mlx-c) shared libraries separately via CMake.  On MacOS, MLX leverages the Metal library to run on the GPU, and on Windows and Linux, runs on NVIDIA GPUs via CUDA v13.
@@ -243,5 +282,7 @@ Ollama looks for acceleration libraries in the following paths relative to the `
 * `../lib/ollama` (Linux)
 * `.` (macOS)
 * `build/lib/ollama` (for development)
+
+**This fork** additionally searches `build-gfx900/lib/ollama` with higher priority than `build/lib/ollama` (see `ml/path.go`). This means a gfx900 build will be picked up automatically during development without overriding the standard build path.
 
 If the libraries are not found, Ollama will not run with any acceleration libraries.
