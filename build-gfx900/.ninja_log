@@ -228,3 +228,17 @@
 254436	294077	1774109238864633531	ml/backend/ggml/ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-iq3_xxs.cu.o	30ed140396a0041e
 261857	300606	1774109245393600757	ml/backend/ggml/ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-mxfp4.cu.o	f5cc4e7936e6e2db
 264665	302991	1774109247782588825	ml/backend/ggml/ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-q3_k.cu.o	340b73574fecb61a
+277629	316316	1774109261101522896	ml/backend/ggml/ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-q4_0.cu.o	386ceabe32bffcc8
+290571	327860	1774109272650466524	ml/backend/ggml/ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-q4_1.cu.o	d95ac6e3c1cf6e94
+294078	331958	1774109276748446695	ml/backend/ggml/ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-q5_0.cu.o	6638741e0a5c191a
+263359	335674	1774109280462428802	ml/backend/ggml/ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-q2_k.cu.o	c055cb87ceb04bfb
+293969	337063	1774109281855422109	ml/backend/ggml/ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-q4_k.cu.o	426068ee75de7afc
+300610	338257	1774109283046416396	ml/backend/ggml/ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-q5_1.cu.o	4d919cca931f0719
+302992	345274	1774109290064382881	ml/backend/ggml/ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-q5_k.cu.o	d6e6abea98588a14
+331961	347503	1774109292296372276	ml/backend/ggml/ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q4_0-q4_0.cu.o	fc5eeb57ef2bdc51
+335674	348809	1774109293604366073	ml/backend/ggml/ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-q8_0-q8_0.cu.o	c8bfbd5983f1c05d
+138005	351464	1774109296260353505	ml/backend/ggml/ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-tile-instance-dkq576-dv512.cu.o	b2f47828025effcf
+337065	351636	1774109296431352697	ml/backend/ggml/ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/fattn-vec-instance-f16-f16.cu.o	c38e8379cf105590
+316318	353998	1774109298791341563	ml/backend/ggml/ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-q6_k.cu.o	242d753b3190f36c
+327862	355762	1774109300552333273	ml/backend/ggml/ggml/src/ggml-hip/CMakeFiles/ggml-hip.dir/__/ggml-cuda/template-instances/mmq-instance-q8_0.cu.o	8b37d0345e4e3f0
+355762	355877	1774109300677332685	lib/ollama/libggml-hip.so	2a8bd7a960f5f335
