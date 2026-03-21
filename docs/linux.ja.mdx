@@ -1,0 +1,185 @@
+---
+title: Linux
+---
+
+[English](./linux.mdx) | [日本語](./linux.ja.mdx)
+
+> **gfx900 / MI25 ユーザーへ:** 標準の Linux インストール手順では gfx900 は動作しません。
+> [gfx900 / MI25 ガイド](./gfx900-mi25.ja.md) を参照してフォーク版をビルドしてください。
+
+---
+
+## インストール
+
+```shell
+curl -fsSL https://ollama.com/install.sh | sh
+```
+
+## 手動インストール
+
+> アップグレードの場合は先に古いライブラリを削除してください：
+> ```shell
+> sudo rm -rf /usr/lib/ollama
+> ```
+
+パッケージをダウンロード・展開します：
+
+```shell
+curl -fsSL https://ollama.com/download/ollama-linux-amd64.tar.zst \
+    | sudo tar x -C /usr
+```
+
+起動確認：
+
+```shell
+ollama serve
+# 別ターミナルで
+ollama -v
+```
+
+### AMD GPU インストール（ROCm）
+
+AMD GPU がある場合、追加の ROCm パッケージも展開します：
+
+```shell
+curl -fsSL https://ollama.com/download/ollama-linux-amd64-rocm.tar.zst \
+    | sudo tar x -C /usr
+```
+
+> **gfx900 / MI25 の場合:** upstream の ROCm パッケージは gfx900 をサポートしていません。
+> [gfx900 / MI25 ガイド](./gfx900-mi25.ja.md) に従ってフォーク版をビルドしてください。
+
+### ARM64 インストール
+
+```shell
+curl -fsSL https://ollama.com/download/ollama-linux-arm64.tar.zst \
+    | sudo tar x -C /usr
+```
+
+---
+
+## systemd サービスとして登録（推奨）
+
+Ollama 専用のユーザーとグループを作成します：
+
+```shell
+sudo useradd -r -s /bin/false -U -m -d /usr/share/ollama ollama
+sudo usermod -a -G ollama $(whoami)
+```
+
+`/etc/systemd/system/ollama.service` を作成します：
+
+```ini
+[Unit]
+Description=Ollama Service
+After=network-online.target
+
+[Service]
+ExecStart=/usr/bin/ollama serve
+User=ollama
+Group=ollama
+Restart=always
+RestartSec=3
+Environment="PATH=$PATH"
+
+[Install]
+WantedBy=multi-user.target
+```
+
+サービスを有効化します：
+
+```shell
+sudo systemctl daemon-reload
+sudo systemctl enable ollama
+```
+
+---
+
+## AMD ROCm ドライバのインストール
+
+ROCm v7 ドライバが必要です：
+
+```shell
+# AMD の公式ドキュメントに従ってインストール
+# https://rocm.docs.amd.com/projects/install-on-linux/en/latest/tutorial/quick-start.html
+```
+
+> AMD は `amdgpu` ドライバを Linux カーネルにアップストリームしていますが、古いバージョンは ROCm の全機能をサポートしない場合があります。
+> 最新ドライバのインストールを推奨します：https://www.amd.com/en/support/linux-drivers
+
+---
+
+## サービスの起動
+
+```shell
+sudo systemctl start ollama
+sudo systemctl status ollama
+```
+
+---
+
+## カスタマイズ
+
+環境変数の設定：
+
+```shell
+sudo systemctl edit ollama
+```
+
+または `/etc/systemd/system/ollama.service.d/override.conf` を手動作成：
+
+```ini
+[Service]
+Environment="OLLAMA_DEBUG=1"
+```
+
+---
+
+## ログの確認
+
+```shell
+journalctl -e -u ollama
+```
+
+---
+
+## アップデート
+
+```shell
+curl -fsSL https://ollama.com/install.sh | sh
+```
+
+または手動で再ダウンロード：
+
+```shell
+curl -fsSL https://ollama.com/download/ollama-linux-amd64.tar.zst \
+    | sudo tar x -C /usr
+```
+
+## 特定バージョンのインストール
+
+```shell
+curl -fsSL https://ollama.com/install.sh | OLLAMA_VERSION=0.5.7 sh
+```
+
+---
+
+## アンインストール
+
+```shell
+# サービスの停止・無効化
+sudo systemctl stop ollama
+sudo systemctl disable ollama
+sudo rm /etc/systemd/system/ollama.service
+
+# ライブラリの削除
+sudo rm -r $(which ollama | tr 'bin' 'lib')
+
+# バイナリの削除
+sudo rm $(which ollama)
+
+# モデルとユーザーの削除
+sudo userdel ollama
+sudo groupdel ollama
+sudo rm -r /usr/share/ollama
+```

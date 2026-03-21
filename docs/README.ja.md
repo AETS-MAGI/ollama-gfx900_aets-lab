@@ -32,6 +32,6 @@
 
 ### リソース
 
-* [トラブルシューティング](https://docs.ollama.com/troubleshooting)
-* [FAQ](https://docs.ollama.com/faq#faq)
-* [開発ガイド](./development.md)
+* [トラブルシューティング](./troubleshooting.ja.mdx)
+* [FAQ](./faq.ja.mdx)
+* [開発ガイド](./development.ja.md)

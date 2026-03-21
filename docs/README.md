@@ -32,6 +32,6 @@
 
 ### Resources
 
-* [Troubleshooting Guide](https://docs.ollama.com/troubleshooting)
-* [FAQ](https://docs.ollama.com/faq#faq)
+* [Troubleshooting Guide](./troubleshooting.mdx)
+* [FAQ](./faq.mdx)
 * [Development guide](./development.md)
