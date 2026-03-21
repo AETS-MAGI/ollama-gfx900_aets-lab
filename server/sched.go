@@ -423,6 +423,16 @@ func (s *Scheduler) load(req *LlmRequest, systemInfo ml.SystemInfo, gpus []ml.De
 		slog.Warn("model architecture does not currently support parallel requests", "architecture", req.model.Config.ModelFamily)
 	}
 
+	if numParallel != 1 {
+		for _, gpu := range gpus {
+			if gpu.IsROCmGFX900() {
+				numParallel = 1
+				slog.Info("forcing num_parallel=1 for ROCm gfx900", "gpu", gpu.Description, "compute", gpu.Compute())
+				break
+			}
+		}
+	}
+
 	sessionDuration := envconfig.KeepAlive()
 	if req.sessionDuration != nil {
 		sessionDuration = req.sessionDuration.Duration

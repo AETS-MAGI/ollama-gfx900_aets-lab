@@ -342,6 +342,10 @@ func (d DeviceInfo) Driver() string {
 	return strconv.Itoa(d.DriverMajor) + "." + strconv.Itoa(d.DriverMinor)
 }
 
+func (d DeviceInfo) IsROCmGFX900() bool {
+	return strings.EqualFold(d.Library, "ROCm") && strings.EqualFold(d.Compute(), "gfx900")
+}
+
 // MinimumMemory reports the amount of memory that should be set aside
 // on the device for overhead (e.g. VRAM consumed by context structures independent
 // of model allocations)
@@ -482,7 +486,7 @@ func FlashAttentionSupported(l []DeviceInfo) bool {
 		supportsFA := gpu.Library == "cpu" ||
 			gpu.Name == "Metal" || gpu.Library == "Metal" ||
 			(gpu.Library == "CUDA" && gpu.DriverMajor >= 7 && !(gpu.ComputeMajor == 7 && gpu.ComputeMinor == 2)) ||
-			gpu.Library == "ROCm" ||
+			(gpu.Library == "ROCm" && !gpu.IsROCmGFX900()) ||
 			gpu.Library == "Vulkan"
 
 		if !supportsFA {

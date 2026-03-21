@@ -39,9 +39,11 @@ var LibOllamaPath string = func() string {
 	}
 
 	paths := []string{
-		libPath,
-
 		// build paths for development
+		filepath.Join(filepath.Dir(exe), "build-gfx900", "lib", "ollama"),
+		filepath.Join(cwd, "build-gfx900", "lib", "ollama"),
+
+		libPath,
 		filepath.Join(filepath.Dir(exe), "build", "lib", "ollama"),
 		filepath.Join(cwd, "build", "lib", "ollama"),
 	}

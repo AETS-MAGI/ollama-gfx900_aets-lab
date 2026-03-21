@@ -71,8 +71,36 @@ var OnceLoad = sync.OnceFunc(func() {
 	// Avoid potentially loading incompatible GGML libraries
 	paths, ok := os.LookupEnv("OLLAMA_LIBRARY_PATH")
 	if !ok {
-		slog.Debug("OLLAMA_LIBRARY_PATH not set, falling back to default", "search", value)
-		paths = value
+		search := []string{
+			filepath.Join(filepath.Dir(exe), "build-gfx900", "lib", "ollama"),
+			value,
+			filepath.Join(filepath.Dir(exe), "build", "lib", "ollama"),
+		}
+		if cwd, err := os.Getwd(); err == nil {
+			search = append(search,
+				filepath.Join(cwd, "build-gfx900", "lib", "ollama"),
+				filepath.Join(cwd, "build", "lib", "ollama"),
+			)
+		}
+
+		existing := make([]string, 0, len(search))
+		seen := make(map[string]struct{}, len(search))
+		for _, path := range search {
+			if _, already := seen[path]; already {
+				continue
+			}
+
+			seen[path] = struct{}{}
+			if _, err := os.Stat(path); err == nil {
+				existing = append(existing, path)
+			}
+		}
+		if len(existing) == 0 {
+			existing = append(existing, value)
+		}
+
+		slog.Debug("OLLAMA_LIBRARY_PATH not set, falling back to default", "search", existing)
+		paths = strings.Join(existing, string(filepath.ListSeparator))
 	}
 
 	libPaths = filepath.SplitList(paths)

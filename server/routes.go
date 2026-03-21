@@ -1833,6 +1833,15 @@ func Serve(ln net.Listener) error {
 	default:
 		s.defaultNumCtx = 4096
 	}
+	if s.defaultNumCtx > 8192 {
+		for _, gpu := range gpus {
+			if gpu.IsROCmGFX900() {
+				s.defaultNumCtx = 8192
+				slog.Info("capping default context for ROCm gfx900", "default_num_ctx", s.defaultNumCtx)
+				break
+			}
+		}
+	}
 	slog.Info("vram-based default context", "total_vram", format.HumanBytes2(totalVRAM), "default_num_ctx", s.defaultNumCtx)
 
 	err = srvr.Serve(ln)
