@@ -47,6 +47,14 @@ End-to-end success should only be claimed when directly verified for the target 
 - Local rocBLAS/Tensile(gfx900) override workflow is part of validation.
 - Additional investigation-oriented scripts and notes are used alongside source changes.
 
+### Packaging role split (source vs. artifacts)
+
+- `ollama-src` is maintained as the **source-of-truth for code and docs**.
+- Prebuilt runtime artifacts are maintained in the companion distribution repository: `ollama-gfx900-starter-kit`.
+- For public distribution hygiene, generated outputs and local backup binaries should not be treated as primary source content.
+  Examples include `build-gfx900/`, `.backup/`, and local test binaries under the repo root.
+- If binaries/libraries need to be shared, publish them via starter-kit release assets rather than source-repo commits.
+
 ## 6. gfx900 / MI25 notes
 
 - ROCm visibility (`rocminfo`) and actual inference execution are separate checkpoints.
