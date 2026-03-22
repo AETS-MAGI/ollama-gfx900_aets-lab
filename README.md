@@ -4,6 +4,10 @@
   </a>
 </p>
 
+<p align="center">
+  <img src="assets/img/logo.webp" alt="Ollama gfx900 Starter Kit" width="200"/>
+</p>
+
 # Ollama
 
 [English](README.md) | [日本語](README.ja.md)
