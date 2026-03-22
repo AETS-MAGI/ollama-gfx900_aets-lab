@@ -51,6 +51,7 @@ End-to-end success should only be claimed when directly verified for the target 
 
 - `ollama-src` is maintained as the **source-of-truth for code and docs**.
 - Prebuilt runtime artifacts are maintained in the companion distribution repository: `ollama-gfx900-starter-kit`.
+- Repository cleanup is done by role separation and clearer docs, not by destructive deletion of investigation history.
 - For public distribution hygiene, generated outputs and local backup binaries should not be treated as primary source content.
   Examples include `build-gfx900/`, `.backup/`, and local test binaries under the repo root.
 - If binaries/libraries need to be shared, publish them via starter-kit release assets rather than source-repo commits.
