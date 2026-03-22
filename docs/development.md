@@ -149,6 +149,16 @@ cmake -B build-gfx900 \
 cmake --build build-gfx900 --parallel $(nproc)
 ```
 
+If CMake fails with `Could not find a package configuration file provided by "hip"`, rerun configure with
+an explicit HIP CMake package path:
+
+```shell
+cmake -B build-gfx900 \
+    -DAMDGPU_TARGETS=gfx900 \
+    -DCMAKE_BUILD_TYPE=Release \
+    -Dhip_DIR=/opt/rocm/lib/cmake/hip
+```
+
 If rocBLAS initialization fails at runtime (crash or CPU fallback), build a local rocBLAS/Tensile for gfx900
 using the script in the related [ROCm-MI25-build](https://github.com/AETS-MAGI/ROCm-MI25-build) repository:
 
