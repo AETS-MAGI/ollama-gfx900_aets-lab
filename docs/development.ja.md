@@ -146,6 +146,16 @@ cmake -B build-gfx900 \
 cmake --build build-gfx900 --parallel $(nproc)
 ```
 
+CMake 実行時に `Could not find a package configuration file provided by "hip"` が出る場合は、
+`hip` の CMake パッケージパスを明示して configure をやり直してください：
+
+```shell
+cmake -B build-gfx900 \
+    -DAMDGPU_TARGETS=gfx900 \
+    -DCMAKE_BUILD_TYPE=Release \
+    -Dhip_DIR=/opt/rocm/lib/cmake/hip
+```
+
 実行時に rocBLAS の初期化に失敗する場合（クラッシュや CPU フォールバック）は、関連リポジトリ
 [ROCm-MI25-build](https://github.com/AETS-MAGI/ROCm-MI25-build) のスクリプトで gfx900 向け rocBLAS/Tensile をローカルビルドします：
 
