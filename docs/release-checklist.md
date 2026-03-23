@@ -39,11 +39,18 @@ Confirm `.gitignore` includes:
 
 ```bash
 # Spot-check for local paths
-git grep -n '/home/' -- '*.go' '*.md' || true
+git grep -nE '/home/[^/]+/' -- '*.go' '*.md' '*.sh' '*.yaml' '*.yml' '*.json' '*.toml' || true
 
-# Spot-check for credentials
-git grep -rn 'password\|secret\|token\|api_key' -- '*.go' || true
+# Spot-check for likely credential assignments (reduced false positives)
+git grep -nEI \
+  "(api[_-]?key|secret|access[_-]?key|private[_-]?key|password)[[:space:]]*[:=][[:space:]]*['\"][^'\"]{8,}['\"]" \
+  -- '*.go' '*.md' '*.sh' '*.yaml' '*.yml' '*.json' '*.toml' || true
 ```
+
+Notes:
+
+- Do not use a plain `token` keyword grep; it produces heavy false positives in this codebase.
+- If `gitleaks` is available in your environment, run it as an additional pre-release check.
 
 ### 5. Version tag is consistent
 
