@@ -88,6 +88,30 @@ Related repository:
 
 This fork is for investigation and validation. It is not an official compatibility promise, product commitment, or support guarantee for Vega/gfx900/MI25.
 
+## 10. One-shot baseline/side compare entry (UX handoff)
+
+For operators who start from `ollama-src`, use this script entry:
+
+```bash
+cd /home/limonene/ROCm-project/ollama-src
+scripts/mi25_anchor_compare.sh --repeat 1 --predict-values 64,128 --report-format all
+```
+
+What this does (via `multi_llm-client/scripts/anchor_compare.sh`):
+
+1. baseline bench (`gfx900_anchor_baseline`)
+2. side bench (`gfx900_anchor_side1024`)
+3. compare (`--bench-compare`)
+4. mode reports (`--bench-report`, tsv/md/json)
+
+Output artifacts are written under `multi_llm-client/worklog/`.
+
+Workload caution:
+
+- `gpt-oss` is the current direct-dispatch anchor (`[main-node confirmed]`).
+- `tinyllama/qwen/deepseek` often remain indirect on the current GGUF path.
+- Do not mix catalog-read evidence with dispatch evidence when interpreting results.
+
 ---
 
 The upstream README content is intentionally not duplicated in this fork.

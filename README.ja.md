@@ -78,6 +78,31 @@
 
 このフォークは調査・検証用途です。Vega/gfx900/MI25 に対する公式な互換性保証、製品コミットメント、サポート保証を意味しません。
 
+## 10. one-shot baseline/side 比較導線（UX 還元）
+
+`ollama-src` 側から開始する運用者向けに、次の入口スクリプトを用意しています。
+
+```bash
+cd /home/limonene/ROCm-project/ollama-src
+scripts/mi25_anchor_compare.sh --repeat 1 --predict-values 64,128 --report-format all
+```
+
+この導線は内部で `multi_llm-client/scripts/anchor_compare.sh` を呼び、
+以下を1回で実行します。
+
+1. baseline bench（`gfx900_anchor_baseline`）
+2. side bench（`gfx900_anchor_side1024`）
+3. compare（`--bench-compare`）
+4. mode report（`--bench-report`, tsv/md/json）
+
+成果物は `multi_llm-client/worklog/` に出力されます。
+
+ワークロード依存の注意:
+
+- `gpt-oss` は現時点の direct-dispatch anchor（`[main-node confirmed]`）
+- `tinyllama/qwen/deepseek` は current GGUF path で indirect が多い
+- 結果解釈時は catalog-read evidence と dispatch evidence を混同しない
+
 ---
 
 このフォークでは、upstream の一般向け導入手順を重複掲載しません。
