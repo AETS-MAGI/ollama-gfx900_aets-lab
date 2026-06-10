@@ -64,6 +64,21 @@ func (e filteredEnv) LogValue() slog.Value {
 	return slog.GroupValue(attrs...)
 }
 
+func standardEngineFlashAttention(fa bool, faUserSet bool, faSupported bool) ml.FlashAttentionType {
+	if !faSupported {
+		return ml.FlashAttentionDisabled
+	}
+
+	if faUserSet {
+		if fa {
+			return ml.FlashAttentionEnabled
+		}
+		return ml.FlashAttentionDisabled
+	}
+
+	return ml.FlashAttentionAuto
+}
+
 type LlamaServer interface {
 	ModelPath() string
 	Load(ctx context.Context, systemInfo ml.SystemInfo, gpus []ml.DeviceInfo, requireFull bool) ([]ml.DeviceID, error)
@@ -197,15 +212,22 @@ func NewLlamaServer(systemInfo ml.SystemInfo, gpus []ml.DeviceInfo, modelPath st
 	}
 
 	fa := envconfig.FlashAttention(f.FlashAttention())
+	faSupported := true
 
 	// This will disable flash attention unless all GPUs on the system support it, even if we end up selecting a subset
 	// that can handle it.
-	if fa && !ml.FlashAttentionSupported(gpus) {
+	if !ml.FlashAttentionSupported(gpus) {
+		faSupported = false
+	}
+	if fa && !faSupported {
 		slog.Warn("flash attention enabled but not supported by gpu")
 		fa = false
 	}
 
-	if fa && !f.SupportsFlashAttention() {
+	if !f.SupportsFlashAttention() {
+		faSupported = false
+	}
+	if fa && !faSupported {
 		slog.Warn("flash attention enabled but not supported by model")
 		fa = false
 	}
@@ -213,14 +235,7 @@ func NewLlamaServer(systemInfo ml.SystemInfo, gpus []ml.DeviceInfo, modelPath st
 	kvct := strings.ToLower(envconfig.KvCacheType())
 
 	if tok == nil {
-		flashAttention := ml.FlashAttentionAuto
-		if faUserSet {
-			if fa {
-				flashAttention = ml.FlashAttentionEnabled
-			} else {
-				flashAttention = ml.FlashAttentionDisabled
-			}
-		}
+		flashAttention := standardEngineFlashAttention(fa, faUserSet, faSupported)
 
 		if kvct != "" {
 			if f.KVCacheTypeIsQuantized(kvct) {

@@ -13,6 +13,64 @@ import (
 	"golang.org/x/sync/semaphore"
 )
 
+func TestStandardEngineFlashAttention(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name        string
+		fa          bool
+		faUserSet   bool
+		faSupported bool
+		want        ml.FlashAttentionType
+	}{
+		{
+			name:        "supported default remains auto",
+			fa:          true,
+			faUserSet:   false,
+			faSupported: true,
+			want:        ml.FlashAttentionAuto,
+		},
+		{
+			name:        "unsupported default is disabled",
+			fa:          false,
+			faUserSet:   false,
+			faSupported: false,
+			want:        ml.FlashAttentionDisabled,
+		},
+		{
+			name:        "explicit false is disabled",
+			fa:          false,
+			faUserSet:   true,
+			faSupported: true,
+			want:        ml.FlashAttentionDisabled,
+		},
+		{
+			name:        "explicit true is enabled when supported",
+			fa:          true,
+			faUserSet:   true,
+			faSupported: true,
+			want:        ml.FlashAttentionEnabled,
+		},
+		{
+			name:        "unsupported overrides explicit true",
+			fa:          false,
+			faUserSet:   true,
+			faSupported: false,
+			want:        ml.FlashAttentionDisabled,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if got := standardEngineFlashAttention(tt.fa, tt.faUserSet, tt.faSupported); got != tt.want {
+				t.Fatalf("standardEngineFlashAttention() = %s, want %s", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestLLMServerFitGPU(t *testing.T) {
 	minMemory := 457 * format.MebiByte
 
